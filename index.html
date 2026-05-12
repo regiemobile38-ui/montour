@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MonTour</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --gold:#C9A84C;
+  --gold-light:#E8C97A;
+  --dark:#0F0F0F;
+  --dark2:#1A1A1A;
+  --dark3:#242424;
+  --dark4:#2e2e2e;
+  --text:#ffffff;
+  --text-muted:rgba(255,255,255,0.45);
+  --text-dim:rgba(255,255,255,0.25);
+  --border:#2a2a2a;
+  --radius:14px;
+  --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* VIEWS */
+.view{display:none;min-height:100vh;padding-bottom:40px;}
+.view.active{display:block;}
+
+/* HEADER */
+.header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);}
+.logo{display:flex;align-items:center;gap:9px;}
+.logo-box{width:34px;height:34px;background:var(--dark2);border:0.5px solid var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.02em;}
+.logo-text span{color:var(--gold);}
+.header-right{font-size:12px;color:var(--text-muted);}
+
+/* CARDS */
+.card{background:var(--dark2);border:0.5px solid var(--border);border-radius:var(--radius);padding:18px;margin:14px 16px 0;}
+.card-title{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:13px;}
+
+/* HERO CLIENT */
+.hero{background:var(--dark2);border:0.5px solid var(--border);border-radius:var(--radius);padding:22px;margin:16px 16px 0;}
+.hero-tag{font-size:11px;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px;}
+.hero-name{font-size:21px;font-weight:700;margin-bottom:3px;}
+.hero-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+.wait-block{display:flex;align-items:center;gap:18px;}
+.wait-num{font-size:54px;font-weight:700;color:var(--gold);line-height:1;}
+.wait-details{display:flex;flex-direction:column;gap:5px;}
+.wait-label{font-size:12px;color:var(--text-muted);}
+.wait-queue{font-size:14px;color:rgba(255,255,255,0.75);}
+
+/* FORM */
+.field{margin-bottom:13px;}
+.field label{font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:15px;outline:none;}
+.field input::placeholder{color:var(--text-dim);}
+.field input:focus,.field select:focus{border-color:var(--gold);}
+
+/* PRESTA GRID */
+.presta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.presta-btn{padding:11px 4px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--dark3);color:rgba(255,255,255,0.65);font-size:13px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.presta-btn.sel{background:#1a1600;color:var(--gold);border-color:var(--gold);}
+
+/* BUTTONS */
+.btn-gold{width:100%;padding:14px;background:var(--gold);color:var(--dark);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+.btn-gold:active{opacity:0.85;}
+.btn-outline{width:100%;padding:12px;background:transparent;color:var(--gold);border:0.5px solid var(--gold);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
+.btn-dark{padding:9px 14px;background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius-sm);color:rgba(255,255,255,0.6);font-size:13px;cursor:pointer;}
+.btn-manual{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;margin-top:10px;border:0.5px dashed var(--gold);border-radius:var(--radius-sm);background:transparent;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;}
+
+/* SUCCESS */
+.success-wrap{padding:40px 20px;text-align:center;}
+.success-icon{font-size:56px;margin-bottom:18px;}
+.success-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.success-sub{font-size:14px;color:var(--text-muted);line-height:1.6;}
+.success-card{background:var(--dark2);border:0.5px solid var(--border);border-radius:var(--radius);padding:18px;margin-top:22px;text-align:left;}
+.s-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:14px;}
+.s-row:last-child{border-bottom:none;}
+.s-label{color:var(--text-muted);}
+.s-val{color:var(--gold);font-weight:600;}
+
+/* STANDBY */
+.standby-wrap{padding:60px 20px;text-align:center;}
+.standby-icon{font-size:52px;margin-bottom:14px;}
+.standby-badge{display:inline-block;background:#1a1000;color:var(--gold);border:0.5px solid var(--gold);font-size:11px;padding:4px 12px;border-radius:20px;margin-bottom:12px;}
+.standby-title{font-size:20px;font-weight:700;margin-bottom:8px;}
+.standby-sub{font-size:14px;color:var(--text-muted);line-height:1.6;}
+
+/* COIFFEUR */
+.seat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.seat-title-row{display:flex;align-items:center;gap:9px;}
+.seat-ico{width:33px;height:33px;border-radius:8px;background:var(--dark3);border:0.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.seat-title{font-size:16px;font-weight:700;}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:#1a1200;color:var(--gold);border:0.5px solid var(--gold);}
+.badge.red{background:#1a0000;color:#ff6b6b;border-color:#ff4444;}
+.standby-toggle{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.slider-row label{font-size:12px;color:var(--text-muted);white-space:nowrap;}
+.slider-row input[type=range]{flex:1;accent-color:var(--gold);}
+.slider-val{font-size:14px;font-weight:700;color:var(--gold);min-width:50px;}
+.client-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border);}
+.client-row:last-child{border-bottom:none;}
+.client-left{display:flex;align-items:center;gap:11px;}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--dark3);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--gold);}
+.c-name{font-size:14px;font-weight:600;}
+.c-meta{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:20px;}
+.pill-wait{background:#1a1200;color:#f0b429;}
+.pill-go{background:#0a1a0a;color:#28a745;}
+.pill-notif{background:#0a0f1a;color:#17a2b8;}
+.pdot{width:6px;height:6px;border-radius:50%;}
+.pdot-wait{background:#f0b429;}
+.pdot-go{background:#28a745;}
+.pdot-notif{background:#17a2b8;}
+.actions{display:flex;gap:6px;}
+.act-btn{width:36px;height:36px;border-radius:9px;border:0.5px solid var(--border);background:var(--dark3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.act-btn:active{opacity:0.7;}
+.empty-list{text-align:center;padding:28px 0;color:var(--text-muted);font-size:14px;}
+.alert-bar{background:#1a0e00;border:0.5px solid #f0b429;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:#f0b429;}
+
+/* ADMIN */
+.admin-seat-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border);}
+.admin-seat-row:last-child{border-bottom:none;}
+.admin-seat-left{display:flex;align-items:center;gap:10px;}
+.status-active{color:#28a745;font-size:11px;}
+.status-standby{color:var(--gold);font-size:11px;}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px;margin-top:10px;border:0.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;}
+.presta-edit-row{display:flex;gap:7px;align-items:center;margin-bottom:8px;}
+.presta-edit-row input{flex:1;padding:9px 11px;background:var(--dark3);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;}
+.presta-edit-row .price{width:72px;}
+.del-btn{width:32px;height:32px;border-radius:8px;border:0.5px solid #3a1010;background:#1a0808;color:#ff6b6b;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;}
+.link-box{background:var(--dark3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;border:0.5px solid var(--border);}
+.link-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.link-url{font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.4;}
+.copy-btn{display:inline-block;margin-top:7px;padding:5px 11px;background:var(--gold);color:var(--dark);border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px;}
+.qr-btn{display:inline-block;margin-top:7px;padding:5px 11px;background:var(--dark4);color:var(--gold);border:0.5px solid var(--gold);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;}
+.sms-preview{background:var(--dark3);border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;color:var(--text-muted);line-height:1.5;margin-top:8px;}
+.save-bar{position:sticky;bottom:0;background:var(--dark);border-top:0.5px solid var(--border);padding:14px 16px;}
+
+/* PROFIL */
+.profil-hero{background:var(--dark2);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 16px 0;}
+.profil-salon-name{font-size:22px;font-weight:700;margin-bottom:4px;}
+.profil-addr{font-size:13px;color:var(--text-muted);margin-bottom:12px;}
+.stars{font-size:16px;margin-bottom:3px;}
+.stars-sub{font-size:12px;color:var(--text-muted);}
+.coiffeur-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:0.5px solid var(--border);border-radius:20px;background:var(--dark3);margin:0 6px 6px 0;cursor:pointer;font-size:13px;color:var(--text-muted);}
+.coiffeur-chip.active{border-color:var(--gold);color:var(--gold);}
+.avail-dot{width:7px;height:7px;border-radius:50%;}
+.dot-green{background:#28a745;}
+.dot-yellow{background:var(--gold);}
+.presta-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border);font-size:14px;}
+.presta-item:last-child{border-bottom:none;}
+.presta-price{color:var(--gold);font-weight:700;}
+.siege-link{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;text-decoration:none;}
+.siege-link-name{font-size:14px;font-weight:600;color:var(--text);}
+.siege-link-meta{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.siege-link-arrow{color:var(--gold);font-size:18px;}
+.wait-chip-small{display:inline-block;background:#1a1200;color:var(--gold);border:0.5px solid var(--gold);font-size:11px;padding:2px 8px;border-radius:20px;margin-left:6px;}
+.review-card{background:var(--dark3);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;}
+.review-author{font-size:13px;font-weight:600;margin-bottom:3px;}
+.review-stars{font-size:13px;margin-bottom:4px;}
+.review-text{font-size:13px;color:var(--text-muted);line-height:1.5;}
+
+/* LOGIN */
+.login-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.login-icon{font-size:52px;margin-bottom:14px;}
+.login-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;}
+.login-card{background:var(--dark2);border:0.5px solid var(--border);border-radius:var(--radius);padding:22px;width:100%;max-width:340px;}
+.login-err{font-size:13px;color:#ff6b6b;text-align:center;margin-top:10px;display:none;}
+
+/* NAV BOTTOM */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:0.5px solid var(--border);display:flex;z-index:50;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;gap:3px;}
+.nav-item.active .nav-icon{color:var(--gold);}
+.nav-item.active .nav-label{color:var(--gold);}
+.nav-icon{font-size:20px;color:var(--text-muted);}
+.nav-label{font-size:10px;color:var(--text-muted);}
+
+/* MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;z-index:200;padding:0;}
+.modal-sheet{background:var(--dark2);border-radius:20px 20px 0 0;padding:22px 20px 40px;width:100%;max-width:500px;}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.modal-actions button{flex:1;padding:12px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;}
+.m-confirm{background:var(--gold);color:var(--dark);border:none;}
+.m-cancel{background:var(--dark3);color:var(--text-muted);border:0.5px solid var(--border);}
+
+/* QR MODAL */
+.qr-modal{background:var(--dark2);border-radius:20px 20px 0 0;padding:22px 20px 40px;width:100%;max-width:500px;text-align:center;}
+.qr-container{background:#fff;border-radius:12px;padding:16px;display:inline-block;margin:16px 0;}
+
+.mt8{margin-top:8px;}
+</style>
+</head>
+<body>
+
+<!-- VIEW: CLIENT -->
+<div id="view-client" class="view active">
+  <div class="header">
+    <div class="logo"><div class="logo-box">✂</div><span class="logo-text">Mon<span>Tour</span></span></div>
+    <span class="header-right" id="c-header-right"></span>
+  </div>
+
+  <div id="c-main">
+    <div class="hero" id="c-hero">
+      <div class="hero-tag" id="c-tag">Siège 1</div>
+      <div class="hero-name" id="c-coiffeur">Chargement...</div>
+      <div class="hero-sub">Sans rendez-vous — prenez votre tour</div>
+      <div class="wait-block">
+        <div><div class="wait-num" id="c-wait">—</div><div class="wait-label">min d'attente</div></div>
+        <div class="wait-details">
+          <div class="wait-queue" id="c-queue">...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="c-form">
+      <div class="card-title">Votre prestation</div>
+      <div class="presta-grid" id="c-presta-grid"></div>
+      <div class="field"><label>Prénom</label><input type="text" id="c-prenom" placeholder="Votre prénom" autocomplete="given-name" /></div>
+      <div class="field"><label>Téléphone</label><input type="tel" id="c-tel" placeholder="06 XX XX XX XX" autocomplete="tel" /></div>
+      <button class="btn-gold" onclick="clientInscrire()">✓ Prendre ma place</button>
+    </div>
+  </div>
+
+  <div id="c-success" style="display:none;">
+    <div class="success-wrap">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Vous êtes en file !</div>
+      <div class="success-sub">On vous contacte par SMS ou appel quand c'est votre tour.<br>Vous pouvez aller faire un tour.</div>
+      <div class="success-card">
+        <div class="s-row"><span class="s-label">Siège</span><span class="s-val" id="s-siege">—</span></div>
+        <div class="s-row"><span class="s-label">Prénom</span><span class="s-val" id="s-prenom">—</span></div>
+        <div class="s-row"><span class="s-label">Prestation</span><span class="s-val" id="s-presta">—</span></div>
+        <div class="s-row"><span class="s-label">Attente estimée</span><span class="s-val" id="s-wait">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="c-standby" style="display:none;">
+    <div class="standby-wrap">
+      <div class="standby-icon">⏸</div>
+      <div class="standby-badge">Stand-by</div>
+      <div class="standby-title">Ce siège est momentanément indisponible</div>
+      <div class="standby-sub">Le coiffeur reviendra bientôt.<br>Réessayez dans quelques minutes.</div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: PROFIL SALON -->
+<div id="view-profil" class="view">
+  <div class="header">
+    <div class="logo"><div class="logo-box">✂</div><span class="logo-text">Mon<span>Tour</span></span></div>
+  </div>
+  <div class="profil-hero">
+    <div class="profil-salon-name" id="p-nom">Chargement...</div>
+    <div class="profil-addr" id="p-addr"></div>
+    <div class="stars">⭐⭐⭐⭐⭐</div>
+    <div class="stars-sub">4.8 · 24 avis</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Les coiffeurs</div>
+    <div id="p-coiffeurs"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Prestations &amp; tarifs</div>
+    <div id="p-prestas"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Prendre un tour</div>
+    <div id="p-sieges"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Avis clients</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+      <div style="font-size:38px;font-weight:700;color:var(--gold);">4.8</div>
+      <div><div class="stars" style="margin-bottom:3px;">⭐⭐⭐⭐⭐</div><div class="stars-sub">24 avis</div></div>
+    </div>
+    <div class="review-card"><div class="review-author">Karim B.</div><div class="review-stars">⭐⭐⭐⭐⭐</div><div class="review-text">Super concept ! J'ai pu faire mes courses pendant l'attente et reçu un appel quand c'était mon tour.</div></div>
+    <div class="review-card"><div class="review-author">Mehdi L.</div><div class="review-stars">⭐⭐⭐⭐⭐</div><div class="review-text">Fini les tensions dans la salle d'attente. Vraiment pratique.</div></div>
+    <div class="review-card"><div class="review-author">Thomas R.</div><div class="review-stars">⭐⭐⭐⭐</div><div class="review-text">Le coiffeur m'a appelé exactement au bon moment. Je reviendrai.</div></div>
+  </div>
+</div>
+
+<!-- VIEW: COIFFEUR -->
+<div id="view-coiffeur" class="view">
+  <div class="header">
+    <div class="logo"><div class="logo-box">✂</div><span class="logo-text">Mon<span>Tour</span></span></div>
+    <span class="header-right" id="coi-header"></span>
+  </div>
+  <div style="padding:0 0 80px;">
+    <div id="coi-alert" class="alert-bar" style="display:none;margin:14px 16px 0;">⚠️ Plus de 5 clients en attente !</div>
+    <div class="card">
+      <div class="seat-header">
+        <div class="seat-title-row">
+          <div class="seat-ico">💈</div>
+          <span class="seat-title" id="coi-title">Siège</span>
+          <span class="badge" id="coi-badge">0 client</span>
+        </div>
+        <label class="standby-toggle">
+          Stand-by <input type="checkbox" id="coi-standby" onchange="coiToggleStandby()" />
+        </label>
+      </div>
+      <div class="slider-row">
+        <label>Temps/coupe</label>
+        <input type="range" min="5" max="60" step="5" value="10" id="coi-slider" oninput="coiUpdateTime(this.value)" />
+        <span class="slider-val" id="coi-time">10 min</span>
+      </div>
+      <div id="coi-list"><div class="empty-list">Aucun client en attente</div></div>
+      <button class="btn-manual" onclick="openManualModal()">+ Ajouter un client manuellement</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: ADMIN -->
+<div id="view-admin" class="view">
+  <div id="admin-login">
+    <div class="login-wrap">
+      <div class="login-icon">✂️</div>
+      <div class="login-title">MonTour Admin</div>
+      <div class="login-sub">Accès réservé au gérant</div>
+      <div class="login-card">
+        <div class="field"><label>Identifiant salon</label><input type="text" id="a-salon" placeholder="Ex: barberclub38" autocomplete="off" /></div>
+        <div class="field"><label>Mot de passe</label><input type="password" id="a-pwd" placeholder="••••••••" /></div>
+        <button class="btn-gold" onclick="adminLogin()">Accéder →</button>
+        <div class="login-err" id="a-err">Identifiants incorrects</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-app" style="display:none;padding-bottom:80px;">
+    <div class="header">
+      <div class="logo"><div class="logo-box">✂</div><span class="logo-text">Mon<span>Tour</span></span></div>
+      <span style="font-size:11px;color:var(--gold);border:0.5px solid var(--gold);padding:3px 10px;border-radius:20px;">Admin</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Profil du salon</div>
+      <div class="field"><label>Nom du salon</label><input type="text" id="a-nom" placeholder="Ex: Barber Club 38" /></div>
+      <div class="field"><label>Adresse</label><input type="text" id="a-addr" placeholder="Ex: 12 rue Félix Poulat, Grenoble" /></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sièges</div>
+      <div id="a-sieges"></div>
+      <button class="add-btn" onclick="adminAddSiege()">+ Ajouter un siège</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prestations &amp; tarifs</div>
+      <div id="a-prestas"></div>
+      <button class="add-btn" onclick="adminAddPresta()">+ Ajouter une prestation</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Modèle SMS</div>
+      <div class="field">
+        <textarea id="a-sms" rows="3" style="width:100%;padding:11px 13px;background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;resize:none;line-height:1.5;" oninput="updateSMSPreview()"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Utilisez {prenom} et {siege} dans le message</div>
+      <div class="sms-preview" id="a-sms-preview"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Liens NFC &amp; QR codes</div>
+      <div id="a-links"></div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-gold" onclick="adminSave()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modal-sms" class="modal-overlay" style="display:none;" onclick="closeModalSMS()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💬 Envoyer un SMS</div>
+    <div class="sms-preview" id="modal-sms-text"></div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeModalSMS()">Annuler</button>
+      <button class="m-confirm" onclick="confirmSMS()">Envoyer →</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-manual" class="modal-overlay" style="display:none;" onclick="closeModalManual()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Ajouter un client</div>
+    <div class="field"><label>Prénom</label><input type="text" id="mm-prenom" placeholder="Ex: Marcel" /></div>
+    <div class="field"><label>Téléphone (facultatif)</label><input type="tel" id="mm-tel" placeholder="06 XX XX XX XX" /></div>
+    <div class="field"><label>Prestation</label><select id="mm-presta"></select></div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeModalManual()">Annuler</button>
+      <button class="m-confirm" onclick="confirmManual()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-qr" class="modal-overlay" style="display:none;" onclick="closeModalQR()">
+  <div class="qr-modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="qr-title">QR Code</div>
+    <div class="qr-container"><div id="qr-code"></div></div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;" id="qr-url-label"></div>
+    <button class="m-cancel" style="width:100%;padding:12px;border-radius:var(--radius-sm);font-size:14px;cursor:pointer;" onclick="closeModalQR()">Fermer</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, update, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ═══════════════════════════════════════════
+// REMPLACE CE BLOC PAR TA CONFIG FIREBASE
+// ═══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyB35cpO7CAaEuXgIlKP4swPMFJIFDFMJSk",
+  authDomain: "mon-tour-249af.firebaseapp.com",
+  databaseURL: "https://mon-tour-249af-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mon-tour-249af",
+  storageBucket: "mon-tour-249af.firebasestorage.app",
+  messagingSenderId: "50872912834",
+  appId: "1:50872912834:web:959258be6ffee80019245b"
+};
+// ═══════════════════════════════════════════
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+const params = new URLSearchParams(window.location.search);
+const mode = params.get('mode');
+const salonId = params.get('salon');
+const siegeId = params.get('siege');
+const BASE = window.location.origin + window.location.pathname;
+
+let smsTemplate = "Bonjour {prenom}, c'est votre tour ! On vous attend au siège {siege}.";
+let smsCurrent = {prenom:'', tel:'', key:''};
+let coiData = {};
+let adminSalonId = '';
+let adminSieges = [];
+let adminPrestas = [];
+let selectedPresta = '';
+let clientTemps = 10;
+
+// ──────────────────────────────────────────
+// ROUTING
+// ──────────────────────────────────────────
+function route() {
+  if (mode === 'profil' && salonId) { showView('profil'); loadProfil(); }
+  else if (mode === 'coiffeur' && salonId && siegeId) { showView('coiffeur'); loadCoiffeur(); }
+  else if (mode === 'admin') { showView('admin'); }
+  else if (salonId && siegeId) { showView('client'); loadClient(); }
+  else { showView('profil'); }
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+// ──────────────────────────────────────────
+// CLIENT
+// ──────────────────────────────────────────
+function loadClient() {
+  const siegeRef = ref(db, `salons/${salonId}/sieges/${siegeId}`);
+  const cfgRef = ref(db, `salons/${salonId}/config`);
+
+  onValue(cfgRef, snap => {
+    const cfg = snap.val() || {};
+    smsTemplate = cfg.smsTemplate || smsTemplate;
+    const prestas = cfg.prestations || ['Coupe', 'Barbe', 'Coupe + Barbe'];
+    renderClientPrestas(prestas);
+  });
+
+  onValue(siegeRef, snap => {
+    const data = snap.val() || {};
+
+    if (data.standby) {
+      document.getElementById('c-main').style.display = 'none';
+      document.getElementById('c-standby').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('c-tag').textContent = `Siège ${siegeId}`;
+    document.getElementById('c-coiffeur').textContent = data.coiffeur || 'Coiffeur';
+    document.getElementById('c-header-right').textContent = data.coiffeur || '';
+    clientTemps = data.tempsParCoupe || 10;
+
+    const clients = data.clients ? Object.values(data.clients).filter(c => c.actif !== false) : [];
+    const nb = clients.length;
+    document.getElementById('c-wait').textContent = nb * clientTemps;
+    document.getElementById('c-queue').textContent = nb === 0 ? 'Aucune attente !' : `${nb} personne${nb > 1 ? 's' : ''} avant vous`;
+  });
+}
+
+function renderClientPrestas(prestas) {
+  const grid = document.getElementById('c-presta-grid');
+  grid.innerHTML = '';
+  prestas.forEach((p, i) => {
+    const nom = typeof p === 'string' ? p : p.nom;
+    const btn = document.createElement('button');
+    btn.className = 'presta-btn' + (i === 0 ? ' sel' : '');
+    btn.textContent = nom;
+    if (i === 0) selectedPresta = nom;
+    btn.onclick = () => {
+      document.querySelectorAll('.presta-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      selectedPresta = nom;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+window.clientInscrire = async function() {
+  const prenom = document.getElementById('c-prenom').value.trim();
+  const tel = document.getElementById('c-tel').value.trim();
+  if (!prenom || !tel) { alert('Merci de renseigner prénom et téléphone.'); return; }
+
+  const snap = await get(ref(db, `salons/${salonId}/sieges/${siegeId}/clients`));
+  const existing = snap.val() || {};
+  const actifs = Object.values(existing).filter(c => c.actif !== false);
+  const attente = actifs.length * clientTemps;
+
+  await push(ref(db, `salons/${salonId}/sieges/${siegeId}/clients`), {
+    prenom, tel, prestation: selectedPresta,
+    heure: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}),
+    statut: 'attente', actif: true
+  });
+
+  const siegeSnap = await get(ref(db, `salons/${salonId}/sieges/${siegeId}`));
+  const sData = siegeSnap.val() || {};
+
+  document.getElementById('s-siege').textContent = `Siège ${siegeId} — ${sData.coiffeur || ''}`;
+  document.getElementById('s-prenom').textContent = prenom;
+  document.getElementById('s-presta').textContent = selectedPresta;
+  document.getElementById('s-wait').textContent = attente === 0 ? 'Immédiat !' : `~${attente} min`;
+
+  document.getElementById('c-main').style.display = 'none';
+  document.getElementById('c-success').style.display = 'block';
+};
+
+// ──────────────────────────────────────────
+// PROFIL SALON
+// ──────────────────────────────────────────
+function loadProfil() {
+  onValue(ref(db, `salons/${salonId}`), snap => {
+    const data = snap.val() || {};
+    const cfg = data.config || {};
+    document.getElementById('p-nom').textContent = cfg.nom || 'Salon';
+    document.getElementById('p-addr').textContent = cfg.adresse || '';
+
+    const sieges = cfg.sieges || [];
+    const prestas = cfg.prestations || [];
+
+    document.getElementById('p-coiffeurs').innerHTML = sieges.map((s, i) => {
+      const clients = data.sieges?.[i+1]?.clients ? Object.values(data.sieges[i+1].clients).filter(c => c.actif !== false) : [];
+      const attente = clients.length * (s.tempsParCoupe || 10);
+      const dispo = !s.standby;
+      return `<span class="coiffeur-chip ${i===0?'active':''}" onclick="this.parentElement.querySelectorAll('.coiffeur-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">
+        <span class="avail-dot ${dispo?'dot-green':'dot-yellow'}"></span>
+        ${s.coiffeur||'Coiffeur'} ${dispo ? `<span class="wait-chip-small">~${attente} min</span>` : '<span style="font-size:11px;color:#888;">Stand-by</span>'}
+      </span>`;
+    }).join('');
+
+    document.getElementById('p-prestas').innerHTML = prestas.map(p => {
+      const nom = typeof p === 'string' ? p : p.nom;
+      const prix = typeof p === 'object' ? p.prix : '';
+      return `<div class="presta-item"><span>${nom}</span>${prix ? `<span class="presta-price">${prix}</span>` : ''}</div>`;
+    }).join('');
+
+    document.getElementById('p-sieges').innerHTML = sieges.map((s, i) => {
+      if (s.standby) return '';
+      const clients = data.sieges?.[i+1]?.clients ? Object.values(data.sieges[i+1].clients).filter(c => c.actif !== false) : [];
+      const attente = clients.length * (s.tempsParCoupe || 10);
+      const url = `${BASE}?salon=${salonId}&siege=${i+1}`;
+      return `<a class="siege-link" href="${url}">
+        <div>
+          <div class="siege-link-name">Siège ${i+1} — ${s.coiffeur||'Coiffeur'}</div>
+          <div class="siege-link-meta">~${attente} min d'attente · ${clients.length} client${clients.length>1?'s':''}</div>
+        </div>
+        <span class="siege-link-arrow">→</span>
+      </a>`;
+    }).join('');
+  });
+}
+
+// ──────────────────────────────────────────
+// COIFFEUR
+// ──────────────────────────────────────────
+function loadCoiffeur() {
+  onValue(ref(db, `salons/${salonId}/config`), snap => {
+    const cfg = snap.val() || {};
+    smsTemplate = cfg.smsTemplate || smsTemplate;
+    const prestas = cfg.prestations || ['Coupe', 'Barbe', 'Coupe + Barbe'];
+    const sel = document.getElementById('mm-presta');
+    sel.innerHTML = prestas.map(p => {
+      const nom = typeof p === 'string' ? p : p.nom;
+      return `<option>${nom}</option>`;
+    }).join('');
+  });
+
+  onValue(ref(db, `salons/${salonId}/sieges/${siegeId}`), snap => {
+    const data = snap.val() || {};
+    coiData = data;
+    const coiffeur = data.coiffeur || 'Coiffeur';
+    document.getElementById('coi-header').textContent = `Siège ${siegeId} — ${coiffeur}`;
+    document.getElementById('coi-title').textContent = `Siège ${siegeId}`;
+    document.getElementById('coi-slider').value = data.tempsParCoupe || 10;
+    document.getElementById('coi-time').textContent = (data.tempsParCoupe || 10) + ' min';
+    document.getElementById('coi-standby').checked = !!data.standby;
+
+    const clients = data.clients ? Object.entries(data.clients).filter(([,c]) => c.actif !== false) : [];
+    const nb = clients.length;
+    document.getElementById('coi-badge').textContent = `${nb} client${nb > 1 ? 's' : ''}`;
+    document.getElementById('coi-badge').className = 'badge' + (nb > 5 ? ' red' : '');
+    document.getElementById('coi-alert').style.display = nb > 5 ? 'flex' : 'none';
+    renderCoiClients(clients);
+  });
+}
+
+function renderCoiClients(clients) {
+  const list = document.getElementById('coi-list');
+  if (clients.length === 0) { list.innerHTML = '<div class="empty-list">Aucun client en attente</div>'; return; }
+  list.innerHTML = clients.map(([key, c]) => {
+    const init = (c.prenom || 'C')[0].toUpperCase();
+    const pillCls = c.statut === 'en_cours' ? 'pill-go' : c.statut === 'prevenu' ? 'pill-notif' : 'pill-wait';
+    const dotCls = c.statut === 'en_cours' ? 'pdot-go' : c.statut === 'prevenu' ? 'pdot-notif' : 'pdot-wait';
+    const label = c.statut === 'en_cours' ? 'En cours' : c.statut === 'prevenu' ? 'Prévenu' : 'En attente';
+    return `<div class="client-row">
+      <div class="client-left">
+        <div class="avatar">${init}</div>
+        <div>
+          <div class="c-name">${c.prenom || 'Client'}</div>
+          <div class="c-meta"><span class="pill ${pillCls}"><span class="pdot ${dotCls}"></span>${label}</span> · ${c.prestation || ''} · ${c.heure || ''}</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="act-btn" onclick="openSMSModal('${c.prenom}','${c.tel||''}','${key}')" title="SMS">💬</div>
+        <div class="act-btn" onclick="callClient('${c.tel||''}')" title="Appeler">📞</div>
+        <div class="act-btn" onclick="supprimerClient('${key}')" title="Annuler">✕</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.coiUpdateTime = function(val) {
+  document.getElementById('coi-time').textContent = val + ' min';
+  update(ref(db, `salons/${salonId}/sieges/${siegeId}`), {tempsParCoupe: parseInt(val)});
+};
+
+window.coiToggleStandby = function() {
+  update(ref(db, `salons/${salonId}/sieges/${siegeId}`), {standby: document.getElementById('coi-standby').checked});
+};
+
+window.openSMSModal = function(prenom, tel, key) {
+  smsCurrent = {prenom, tel, key};
+  const msg = smsTemplate.replace('{prenom}', prenom).replace('{siege}', siegeId);
+  document.getElementById('modal-sms-text').textContent = msg;
+  document.getElementById('modal-sms').style.display = 'flex';
+  update(ref(db, `salons/${salonId}/sieges/${siegeId}/clients/${key}`), {statut: 'prevenu'});
+};
+
+window.confirmSMS = function() {
+  const msg = encodeURIComponent(smsTemplate.replace('{prenom}', smsCurrent.prenom).replace('{siege}', siegeId));
+  window.location.href = `sms:${smsCurrent.tel}?body=${msg}`;
+  closeModalSMS();
+};
+
+window.closeModalSMS = function() { document.getElementById('modal-sms').style.display = 'none'; };
+
+window.callClient = function(tel) {
+  if (!tel) { alert('Pas de numéro renseigné.'); return; }
+  window.location.href = 'tel:' + tel;
+};
+
+window.supprimerClient = function(key) {
+  if (confirm('Annuler ce client ?')) {
+    update(ref(db, `salons/${salonId}/sieges/${siegeId}/clients/${key}`), {actif: false});
+  }
+};
+
+window.openManualModal = function() {
+  document.getElementById('mm-prenom').value = '';
+  document.getElementById('mm-tel').value = '';
+  document.getElementById('modal-manual').style.display = 'flex';
+};
+
+window.confirmManual = async function() {
+  const prenom = document.getElementById('mm-prenom').value.trim() || 'Client';
+  const tel = document.getElementById('mm-tel').value.trim();
+  const presta = document.getElementById('mm-presta').value;
+  const heure = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  await push(ref(db, `salons/${salonId}/sieges/${siegeId}/clients`), {prenom, tel, prestation: presta, heure, statut: 'attente', actif: true});
+  closeModalManual();
+};
+
+window.closeModalManual = function() { document.getElementById('modal-manual').style.display = 'none'; };
+
+// ──────────────────────────────────────────
+// ADMIN
+// ──────────────────────────────────────────
+window.adminLogin = async function() {
+  const id = document.getElementById('a-salon').value.trim().toLowerCase();
+  const pwd = document.getElementById('a-pwd').value;
+  if (!id || !pwd) return;
+  const snap = await get(ref(db, `salons/${id}/config/adminPassword`));
+  if (!snap.exists() || snap.val() !== pwd) {
+    document.getElementById('a-err').style.display = 'block'; return;
+  }
+  adminSalonId = id;
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  adminLoad();
+};
+
+function adminLoad() {
+  onValue(ref(db, `salons/${adminSalonId}`), snap => {
+    const data = snap.val() || {};
+    const cfg = data.config || {};
+    adminSieges = cfg.sieges || [];
+    adminPrestas = cfg.prestations || [];
+    smsTemplate = cfg.smsTemplate || smsTemplate;
+    document.getElementById('a-nom').value = cfg.nom || '';
+    document.getElementById('a-addr').value = cfg.adresse || '';
+    document.getElementById('a-sms').value = smsTemplate;
+    updateSMSPreview();
+    renderAdminSieges();
+    renderAdminPrestas();
+    renderAdminLinks();
+  });
+}
+
+function renderAdminSieges() {
+  document.getElementById('a-sieges').innerHTML = adminSieges.map((s, i) => `
+    <div class="admin-seat-row">
+      <div class="admin-seat-left">
+        <div class="seat-ico">💈</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;">Siège ${i+1} — <input value="${s.coiffeur||''}" onchange="adminSieges[${i}].coiffeur=this.value" style="background:transparent;border:none;color:var(--text);font-size:14px;font-weight:600;width:110px;" /></div>
+          <div style="font-size:12px;margin-top:2px;"><span class="${s.standby?'status-standby':'status-active'}">● ${s.standby?'Stand-by':'Actif'}</span> · ${s.tempsParCoupe||10} min/coupe</div>
+        </div>
+      </div>
+      <button class="del-btn" onclick="adminDelSiege(${i})">✕</button>
+    </div>`).join('');
+}
+
+function renderAdminPrestas() {
+  document.getElementById('a-prestas').innerHTML = adminPrestas.map((p, i) => {
+    const nom = typeof p === 'string' ? p : (p.nom || '');
+    const prix = typeof p === 'object' ? (p.prix || '') : '';
+    return `<div class="presta-edit-row">
+      <input value="${nom}" onchange="updatePresta(${i},'nom',this.value)" placeholder="Prestation" />
+      <input class="price" value="${prix}" onchange="updatePresta(${i},'prix',this.value)" placeholder="Prix" />
+      <div class="del-btn" onclick="adminDelPresta(${i})">✕</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminLinks() {
+  document.getElementById('a-links').innerHTML = adminSieges.map((s, i) => {
+    const clientUrl = `${BASE}?salon=${adminSalonId}&siege=${i+1}`;
+    const coiUrl = `${BASE}?mode=coiffeur&salon=${adminSalonId}&siege=${i+1}`;
+    return `<div class="link-box">
+      <div class="link-label">Siège ${i+1} — ${s.coiffeur||'Coiffeur'} · Lien client (NFC &amp; QR)</div>
+      <div class="link-url">${clientUrl}</div>
+      <button class="copy-btn" onclick="copyText('${clientUrl}')">Copier</button>
+      <button class="qr-btn" onclick="showQR('${clientUrl}','Siège ${i+1} — ${s.coiffeur||'Coiffeur'}')">QR Code</button>
+      <div class="link-label mt8">Lien coiffeur (privé)</div>
+      <div class="link-url">${coiUrl}</div>
+      <button class="copy-btn" onclick="copyText('${coiUrl}')">Copier</button>
+    </div>`;
+  }).join('');
+}
+
+window.adminAddSiege = function() {
+  adminSieges.push({coiffeur:'', tempsParCoupe:10, standby:false});
+  renderAdminSieges(); renderAdminLinks();
+};
+
+window.adminDelSiege = function(i) {
+  if(confirm('Supprimer ce siège ?')) { adminSieges.splice(i,1); renderAdminSieges(); renderAdminLinks(); }
+};
+
+window.adminAddPresta = function() {
+  adminPrestas.push({nom:'', prix:''});
+  renderAdminPrestas();
+};
+
+window.adminDelPresta = function(i) {
+  adminPrestas.splice(i,1); renderAdminPrestas();
+};
+
+window.updatePresta = function(i, key, val) {
+  if (typeof adminPrestas[i] === 'string') adminPrestas[i] = {nom: adminPrestas[i], prix:''};
+  adminPrestas[i][key] = val;
+};
+
+window.updateSMSPreview = function() {
+  const tpl = document.getElementById('a-sms')?.value || smsTemplate;
+  document.getElementById('a-sms-preview').textContent = tpl.replace('{prenom}','Karim').replace('{siege}','1');
+};
+
+window.adminSave = async function() {
+  const cfg = {
+    nom: document.getElementById('a-nom').value,
+    adresse: document.getElementById('a-addr').value,
+    smsTemplate: document.getElementById('a-sms').value,
+    adminPassword: (await get(ref(db, `salons/${adminSalonId}/config/adminPassword`))).val() || '',
+    sieges: adminSieges,
+    prestations: adminPrestas
+  };
+  await set(ref(db, `salons/${adminSalonId}/config`), cfg);
+  for (let i = 0; i < adminSieges.length; i++) {
+    const s = adminSieges[i];
+    const existing = (await get(ref(db, `salons/${adminSalonId}/sieges/${i+1}/clients`))).val() || {};
+    await set(ref(db, `salons/${adminSalonId}/sieges/${i+1}`), {
+      coiffeur: s.coiffeur || '',
+      tempsParCoupe: s.tempsParCoupe || 10,
+      standby: s.standby || false,
+      clients: existing
+    });
+  }
+  alert('✅ Sauvegardé !');
+};
+
+window.copyText = function(txt) {
+  navigator.clipboard.writeText(txt).then(() => alert('Lien copié !')).catch(() => { prompt('Copie ce lien :', txt); });
+};
+
+// ──────────────────────────────────────────
+// QR CODE
+// ──────────────────────────────────────────
+window.showQR = function(url, label) {
+  document.getElementById('qr-title').textContent = label;
+  document.getElementById('qr-url-label').textContent = url;
+  document.getElementById('qr-code').innerHTML = '';
+  new QRCode(document.getElementById('qr-code'), {
+    text: url, width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('modal-qr').style.display = 'flex';
+};
+
+window.closeModalQR = function() { document.getElementById('modal-qr').style.display = 'none'; };
+
+// ──────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────
+route();
+</script>
+</body>
+</html>
