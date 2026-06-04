@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>France 24H Fulfillment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#090909;--s1:#111110;--s2:#181716;--s3:#201E1C;
+  --orange:#E85D26;--og:rgba(232,93,38,0.08);--ob:rgba(232,93,38,0.2);
+  --text:#F2EFE8;--muted:#78756F;
+  --border:rgba(255,255,255,0.05);--border2:rgba(255,255,255,0.09);
+  --green:#4CAF7D;--yellow:#E8A030;
+  --r:14px;--font:'Space Grotesk',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+.view{display:none;min-height:100vh;padding-bottom:80px;}
+.view.active{display:block;}
+
+/* HEADER */
+.hdr{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:0.5px solid var(--border2);position:sticky;top:0;z-index:50;}
+.brand{font-size:15px;font-weight:700;letter-spacing:-0.01em;}
+.brand .h24{color:var(--orange);}
+.hdr-badge{font-size:11px;color:var(--muted);background:var(--s2);padding:4px 10px;border-radius:20px;border:0.5px solid var(--border2);}
+.orange-line{height:2px;background:var(--orange);}
+
+/* CARDS */
+.card{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin:12px 14px 0;}
+.card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+.sec-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin:16px 14px 8px;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0;}
+.stat{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);padding:12px;}
+.stat-val{font-size:24px;font-weight:700;color:var(--orange);}
+.stat-val.w{color:var(--text);}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* COLIS */
+.colis-card{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);padding:13px;margin:0 14px 8px;}
+.colis-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.colis-ref{font-size:14px;font-weight:700;}
+.colis-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.b-recu{background:rgba(55,138,221,0.12);color:#7DC4FF;}
+.b-stock{background:rgba(232,160,48,0.1);color:var(--yellow);}
+.b-prepare{background:var(--og);color:var(--orange);}
+.b-expedie{background:rgba(76,175,125,0.12);color:var(--green);}
+
+/* TIMELINE */
+.tl{display:flex;align-items:flex-start;margin-top:10px;}
+.tl-step{display:flex;flex-direction:column;align-items:center;flex:1;}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:var(--s3);border:1.5px solid var(--border2);}
+.tl-dot.done{background:var(--orange);border-color:var(--orange);}
+.tl-dot.cur{background:var(--bg);border:2.5px solid var(--orange);}
+.tl-line{height:1.5px;flex:1;background:var(--border2);align-self:flex-start;margin-top:4px;}
+.tl-line.done{background:var(--orange);}
+.tl-lbl{font-size:9px;color:var(--muted);margin-top:4px;text-align:center;}
+.tl-lbl.done{color:var(--orange);}
+.tl-lbl.cur{color:var(--text);}
+
+/* NOTIF */
+.notif{background:var(--s1);border-left:2px solid var(--orange);border-radius:var(--r);padding:11px 13px;margin:0 14px 8px;}
+.notif-title{font-size:12px;font-weight:600;}
+.notif-time{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* FORMS */
+.field{margin-bottom:11px;}
+.field label{font-size:10px;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:0.05em;text-transform:uppercase;font-weight:600;}
+.field input,.field select{width:100%;padding:11px 13px;background:var(--s2);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;outline:none;font-family:var(--font);}
+.field input:focus,.field select:focus{border-color:var(--orange);}
+.field select option{background:var(--s2);}
+.btn{width:100%;padding:13px;background:var(--orange);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);touch-action:manipulation;}
+.btn-outline{width:100%;padding:11px;background:transparent;color:var(--orange);border:0.5px solid var(--ob);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:8px;touch-action:manipulation;}
+.err{font-size:12px;color:var(--orange);margin-top:6px;display:none;}
+
+/* LOGIN */
+.login-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.login-brand{text-align:center;margin-bottom:28px;}
+.login-brand .big{font-size:24px;font-weight:700;}
+.login-brand .big .h24{color:var(--orange);}
+.login-brand .sub{font-size:13px;color:var(--muted);margin-top:4px;}
+.login-card{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);padding:20px;width:100%;max-width:340px;}
+.login-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+
+/* ROLE TOGGLE */
+.role-row{display:flex;gap:6px;margin-bottom:16px;}
+.role-btn{flex:1;padding:10px;border:0.5px solid var(--border2);border-radius:8px;background:var(--s2);color:var(--muted);font-size:13px;cursor:pointer;text-align:center;font-family:var(--font);font-weight:500;touch-action:manipulation;-webkit-appearance:none;appearance:none;}
+.role-btn.on{background:var(--og);color:var(--orange);border-color:var(--ob);font-weight:700;}
+
+/* TABS */
+.tabs{display:flex;background:var(--s1);border-bottom:0.5px solid var(--border2);}
+.tab{flex:1;padding:11px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;touch-action:manipulation;}
+.tab.on{color:var(--orange);border-bottom-color:var(--orange);}
+
+/* ADMIN ROWS */
+.admin-row{background:var(--s1);border:0.5px solid var(--border2);border-radius:var(--r);padding:13px;margin:0 14px 8px;}
+.row-actions{display:flex;gap:6px;margin-top:10px;}
+.act{flex:1;padding:8px;border:0.5px solid var(--border2);border-radius:8px;background:var(--s2);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;font-family:var(--font);touch-action:manipulation;}
+.act.hl{border-color:var(--ob);color:var(--orange);background:var(--og);}
+
+/* MODAL */
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
+.modal{background:var(--s1);border-radius:18px 18px 0 0;padding:20px 16px 36px;width:100%;max-width:500px;border-top:0.5px solid var(--border2);}
+.modal-handle{width:32px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:14px;}
+.qr-wrap{display:flex;justify-content:center;margin:12px 0;}
+.qr-wrap>div{background:#fff;padding:10px;border-radius:10px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s1);border:0.5px solid var(--border2);border-radius:12px;padding:12px 18px;font-size:13px;color:var(--text);z-index:999;display:none;white-space:nowrap;}
+
+.empty{text-align:center;padding:32px 20px;color:var(--muted);font-size:14px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="v-login" class="view active">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="big">FRANCE <span class="h24">24H</span> FULFILLMENT</div>
+      <div class="sub">Plateforme logistique professionnelle</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Connexion</div>
+      <div class="login-sub">Choisissez votre espace</div>
+      <div class="role-row">
+        <button class="role-btn on" id="rb-client" onclick="setRole('client')" type="button">Client</button>
+        <button class="role-btn" id="rb-admin" onclick="setRole('admin')" type="button">Admin</button>
+      </div>
+      <div class="field"><label>Identifiant</label><input type="text" id="l-id" placeholder="Votre identifiant" autocomplete="off"/></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="l-pwd" placeholder="••••••"/></div>
+      <div class="err" id="l-err">Identifiant ou mot de passe incorrect</div>
+      <button class="btn" style="margin-top:12px;" onclick="doLogin()" type="button">Se connecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT -->
+<div id="v-client" class="view">
+  <div class="hdr">
+    <div class="brand">FRANCE <span class="h24">24H</span></div>
+    <div class="hdr-badge" id="c-badge">Client</div>
+  </div>
+  <div class="orange-line"></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="c-stock">0</div><div class="stat-lbl">En stock</div></div>
+    <div class="stat"><div class="stat-val w" id="c-exp">0</div><div class="stat-lbl">Expedies</div></div>
+    <div class="stat"><div class="stat-val w">0</div><div class="stat-lbl">Incidents</div></div>
+    <div class="stat"><div class="stat-val">24h</div><div class="stat-lbl">Delai moyen</div></div>
+  </div>
+  <div class="sec-title"><span class="live-dot"></span>Activite recente</div>
+  <div id="c-notifs"><div class="empty">Aucune activite</div></div>
+  <div class="sec-title">Mes colis</div>
+  <div id="c-colis"><div class="empty">Aucun colis</div></div>
+  <div style="padding:0 14px;margin-top:8px;">
+    <button class="btn-outline" onclick="logout()" type="button">Se deconnecter</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="v-admin" class="view">
+  <div class="hdr">
+    <div class="brand">FRANCE <span class="h24">24H</span></div>
+    <div class="hdr-badge">Admin</div>
+  </div>
+  <div class="orange-line"></div>
+  <div class="tabs">
+    <div class="tab on" id="t-colis" onclick="switchTab('colis')" >Colis</div>
+    <div class="tab" id="t-clients" onclick="switchTab('clients')">Clients</div>
+    <div class="tab" id="t-add" onclick="switchTab('add')">Ajouter</div>
+  </div>
+  <div id="p-colis">
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="a-total">0</div><div class="stat-lbl">Total colis</div></div>
+      <div class="stat"><div class="stat-val w" id="a-exp">0</div><div class="stat-lbl">Expedies</div></div>
+    </div>
+    <div class="sec-title">Tous les colis</div>
+    <div id="a-colis"><div class="empty">Aucun colis</div></div>
+  </div>
+  <div id="p-clients" style="display:none;">
+    <div class="sec-title">Comptes clients</div>
+    <div id="a-clients"><div class="empty">Aucun client</div></div>
+    <div style="padding:0 14px;margin-top:8px;">
+      <button class="btn" onclick="showNewClient()" type="button">Creer un client</button>
+    </div>
+  </div>
+  <div id="p-add" style="display:none;">
+    <div class="card">
+      <div class="card-title">Nouveau colis</div>
+      <div class="field"><label>Client</label><select id="n-client"><option value="">Selectionnez</option></select></div>
+      <div class="field"><label>Reference (ex: TK-0001)</label><input type="text" id="n-ref" placeholder="TK-0001"/></div>
+      <div class="field"><label>Poids</label>
+        <select id="n-poids">
+          <option value="petit">Petit (0-250g)</option>
+          <option value="moyen">Moyen (250-500g)</option>
+          <option value="grand">Grand (500g-1kg)</option>
+        </select>
+      </div>
+      <div class="field"><label>Statut initial</label>
+        <select id="n-statut"><option value="recu">Recu</option><option value="stock">En stock</option></select>
+      </div>
+      <div class="field"><label>Note (optionnel)</label><input type="text" id="n-note" placeholder="Ex: lot Juin 2026"/></div>
+      <button class="btn" onclick="addColis()" type="button">Enregistrer</button>
+    </div>
+  </div>
+  <div style="padding:0 14px;margin-top:16px;">
+    <button class="btn-outline" onclick="logout()" type="button">Se deconnecter</button>
+  </div>
+</div>
+
+<!-- MODAL QR -->
+<div id="m-qr" class="modal-bg" style="display:none;" onclick="this.style.display='none'">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-qr-title">QR Code</div>
+    <div class="qr-wrap"><div id="qr-div"></div></div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;" id="qr-sub"></div>
+    <button class="btn" style="margin-top:14px;" onclick="document.getElementById('m-qr').style.display='none'" type="button">Fermer</button>
+  </div>
+</div>
+
+<!-- MODAL NOUVEAU CLIENT -->
+<div id="m-client" class="modal-bg" style="display:none;" onclick="this.style.display='none'">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nouveau client</div>
+    <div class="field"><label>Nom</label><input type="text" id="nc-nom" placeholder="Ex: Yanis Charrou"/></div>
+    <div class="field"><label>Identifiant</label><input type="text" id="nc-id" placeholder="Ex: yanis"/></div>
+    <div class="field"><label>Mot de passe</label><input type="password" id="nc-pwd" placeholder="••••••"/></div>
+    <button class="btn" onclick="createClient()" type="button">Creer</button>
+    <button class="btn-outline" onclick="document.getElementById('m-client').style.display='none'" type="button">Annuler</button>
+  </div>
+</div>
+
+<script>
+// FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB35cpO7CAaEuXgIlKP4swPMFJIFDFMJSk",
+  authDomain: "mon-tour-249af.firebaseapp.com",
+  databaseURL: "https://mon-tour-249af-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mon-tour-249af",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// STATE
+let user = null;
+let allColis = {};
+let allClients = {};
+let loginRole = 'client';
+
+// VIEWS
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ROLE TOGGLE
+window.setRole = function(r) {
+  loginRole = r;
+  document.getElementById('rb-client').classList.toggle('on', r==='client');
+  document.getElementById('rb-admin').classList.toggle('on', r==='admin');
+};
+
+// LOGIN
+window.doLogin = async function() {
+  const id = document.getElementById('l-id').value.trim().toLowerCase();
+  const pwd = document.getElementById('l-pwd').value;
+  document.getElementById('l-err').style.display = 'none';
+
+  if (loginRole === 'admin') {
+    const snap = await db.ref('config/admin').get();
+    const cfg = snap.val() || {};
+    if (id === (cfg.id || 'admin') && pwd === (cfg.password || 'admin123')) {
+      user = {role:'admin', id:'admin', nom:'Admin'};
+      sessionStorage.setItem('f24h', JSON.stringify(user));
+      loadAdmin();
+      show('v-admin');
+    } else {
+      document.getElementById('l-err').style.display = 'block';
+    }
+  } else {
+    const snap = await db.ref('clients/' + id).get();
+    if (!snap.exists()) { document.getElementById('l-err').style.display = 'block'; return; }
+    const c = snap.val();
+    if (c.password !== pwd) { document.getElementById('l-err').style.display = 'block'; return; }
+    user = {role:'client', id, nom: c.nom};
+    sessionStorage.setItem('f24h', JSON.stringify(user));
+    loadClient();
+    show('v-client');
+  }
+};
+
+window.logout = function() {
+  sessionStorage.removeItem('f24h');
+  user = null;
+  show('v-login');
+};
+
+// CLIENT
+function loadClient() {
+  document.getElementById('c-badge').textContent = user.nom;
+  db.ref('colis').on('value', snap => {
+    allColis = snap.val() || {};
+    renderClient();
+  });
+}
+
+function renderClient() {
+  const mine = Object.entries(allColis)
+    .filter(([k,v]) => v.clientId === user.id)
+    .sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+
+  let stock = 0, exp = 0;
+  mine.forEach(([k,v]) => {
+    if (v.statut==='stock'||v.statut==='prepare') stock++;
+    if (v.statut==='expedie') exp++;
+  });
+  document.getElementById('c-stock').textContent = stock;
+  document.getElementById('c-exp').textContent = exp;
+
+  if (!mine.length) {
+    document.getElementById('c-colis').innerHTML = '<div class="empty">Aucun colis</div>';
+    document.getElementById('c-notifs').innerHTML = '<div class="empty">Aucune activite</div>';
+    return;
+  }
+
+  let nhtml = '';
+  mine.slice(0,3).forEach(([k,v]) => {
+    const d = new Date(v.updatedAt||v.createdAt||Date.now());
+    nhtml += `<div class="notif"><div class="notif-title">${v.ref} — ${slbl(v.statut)}</div><div class="notif-time">${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  });
+  document.getElementById('c-notifs').innerHTML = nhtml;
+
+  document.getElementById('c-colis').innerHTML = mine.map(([k,v]) => colisCard(k,v,false)).join('');
+}
+
+// ADMIN
+function loadAdmin() {
+  db.ref('colis').on('value', snap => {
+    allColis = snap.val() || {};
+    renderAdminColis();
+  });
+  db.ref('clients').on('value', snap => {
+    allClients = snap.val() || {};
+    renderAdminClients();
+    updateClientSel();
+  });
+}
+
+function renderAdminColis() {
+  const list = Object.entries(allColis).sort((a,b) => (b[1].createdAt||0)-(a[1].createdAt||0));
+  document.getElementById('a-total').textContent = list.length;
+  document.getElementById('a-exp').textContent = list.filter(([k,v])=>v.statut==='expedie').length;
+  document.getElementById('a-colis').innerHTML = list.length ? list.map(([k,v]) => colisCard(k,v,true)).join('') : '<div class="empty">Aucun colis</div>';
+}
+
+function renderAdminClients() {
+  const list = Object.entries(allClients);
+  if (!list.length) { document.getElementById('a-clients').innerHTML = '<div class="empty">Aucun client</div>'; return; }
+  document.getElementById('a-clients').innerHTML = list.map(([id,c]) => {
+    const nb = Object.values(allColis).filter(v=>v.clientId===id).length;
+    return `<div class="admin-row"><div style="font-size:14px;font-weight:700;">${c.nom}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">ID: ${id} · ${nb} colis</div><div class="row-actions"><button class="act" onclick="delClient('${id}')" type="button">Supprimer</button></div></div>`;
+  }).join('');
+}
+
+function updateClientSel() {
+  const sel = document.getElementById('n-client');
+  sel.innerHTML = '<option value="">Selectionnez</option>';
+  Object.entries(allClients).forEach(([id,c]) => {
+    sel.innerHTML += `<option value="${id}">${c.nom}</option>`;
+  });
+}
+
+// COLIS CARD
+function colisCard(key, v, isAdmin) {
+  const steps = ['recu','stock','prepare','expedie'];
+  const idx = steps.indexOf(v.statut);
+  let tl = '';
+  steps.forEach((s,i) => {
+    const cls = i<idx?'done':i===idx?'cur':'';
+    tl += `<div class="tl-step"><div class="tl-dot ${cls}"></div><div class="tl-lbl ${cls}">${steplbl(s)}</div></div>`;
+    if (i<steps.length-1) tl += `<div class="tl-line ${i<idx?'done':''}"></div>`;
+  });
+
+  const next = steps[idx+1];
+  const clientNom = isAdmin ? (allClients[v.clientId]||{nom:v.clientId}).nom : '';
+  let actions = '';
+  if (isAdmin) {
+    actions = `<div class="row-actions">
+      <button class="act" onclick="showQR('${key}','${v.ref}')" type="button">QR Code</button>
+      ${next ? `<button class="act hl" onclick="nextStatut('${key}','${next}')" type="button">→ ${steplbl(next)}</button>` : '<button class="act" style="color:var(--green);" type="button">Expedie</button>'}
+      <button class="act" onclick="delColis('${key}')" type="button">Suppr.</button>
+    </div>`;
+  }
+
+  return `<div class="colis-card">
+    <div class="colis-top">
+      <div><div class="colis-ref">${v.ref}</div><div class="colis-meta">${plbl(v.poids)}${isAdmin?' · '+clientNom:''}${v.note?' · '+v.note:''}</div></div>
+      <span class="badge b-${v.statut}">${slbl(v.statut)}</span>
+    </div>
+    <div class="tl">${tl}</div>
+    ${actions}
+  </div>`;
+}
+
+// ACTIONS
+window.addColis = async function() {
+  const clientId = document.getElementById('n-client').value;
+  const ref = document.getElementById('n-ref').value.trim().toUpperCase();
+  const poids = document.getElementById('n-poids').value;
+  const statut = document.getElementById('n-statut').value;
+  const note = document.getElementById('n-note').value.trim();
+  if (!clientId||!ref) { toast('Remplissez les champs obligatoires'); return; }
+  const id = 'FR24H-' + String(Date.now()).slice(-6);
+  await db.ref('colis/'+id).set({id,ref,clientId,poids,statut,note,createdAt:Date.now(),updatedAt:Date.now()});
+  document.getElementById('n-ref').value='';
+  document.getElementById('n-note').value='';
+  toast('Colis '+ref+' enregistre');
+  switchTab('colis');
+};
+
+window.nextStatut = async function(key, ns) {
+  await db.ref('colis/'+key).update({statut:ns, updatedAt:Date.now()});
+  toast('Statut : '+slbl(ns));
+};
+
+window.delColis = async function(key) {
+  if (!confirm('Supprimer ce colis ?')) return;
+  await db.ref('colis/'+key).remove();
+  toast('Colis supprime');
+};
+
+window.createClient = async function() {
+  const nom = document.getElementById('nc-nom').value.trim();
+  const id = document.getElementById('nc-id').value.trim().toLowerCase();
+  const pwd = document.getElementById('nc-pwd').value;
+  if (!nom||!id||!pwd) { toast('Remplissez tous les champs'); return; }
+  const snap = await db.ref('clients/'+id).get();
+  if (snap.exists()) { toast('Identifiant deja pris'); return; }
+  await db.ref('clients/'+id).set({nom,password:pwd,createdAt:Date.now()});
+  document.getElementById('m-client').style.display='none';
+  ['nc-nom','nc-id','nc-pwd'].forEach(i=>document.getElementById(i).value='');
+  toast('Client '+nom+' cree');
+};
+
+window.delClient = async function(id) {
+  if (!confirm('Supprimer ce client ?')) return;
+  await db.ref('clients/'+id).remove();
+  const snap = await db.ref('colis').get();
+  const all = snap.val()||{};
+  for (const [k,v] of Object.entries(all)) {
+    if (v.clientId===id) await db.ref('colis/'+k).remove();
+  }
+  toast('Client supprime');
+};
+
+window.showQR = function(key, ref) {
+  document.getElementById('m-qr-title').textContent = 'QR — '+ref;
+  document.getElementById('qr-sub').textContent = key+' · '+ref;
+  document.getElementById('qr-div').innerHTML = '';
+  new QRCode(document.getElementById('qr-div'), {text:key+'|'+ref, width:160, height:160});
+  document.getElementById('m-qr').style.display = 'flex';
+};
+
+window.showNewClient = function() {
+  document.getElementById('m-client').style.display='flex';
+};
+
+window.switchTab = function(t) {
+  ['colis','clients','add'].forEach(x => {
+    document.getElementById('t-'+x).classList.toggle('on', x===t);
+    document.getElementById('p-'+x).style.display = x===t?'block':'none';
+  });
+};
+
+// HELPERS
+function slbl(s){return{recu:'Recu',stock:'En stock',prepare:'Prepare',expedie:'Expedie'}[s]||s;}
+function steplbl(s){return{recu:'Recu',stock:'Stock',prepare:'Pret',expedie:'Expedie'}[s]||s;}
+function plbl(p){return{petit:'0-250g',moyen:'250-500g',grand:'500g-1kg'}[p]||p;}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display='none', 2500);
+}
+
+// INIT
+const saved = sessionStorage.getItem('f24h');
+if (saved) {
+  user = JSON.parse(saved);
+  if (user.role==='admin') { loadAdmin(); show('v-admin'); }
+  else { loadClient(); show('v-client'); }
+}
+</script>
+</body>
+</html>
